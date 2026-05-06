@@ -1,0 +1,28 @@
+<svg width="140" height="48" viewBox="0 0 140 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Icon Background with Gradient -->
+  <defs>
+    <linearGradient id="iconGradient" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#9333EA"/>
+      <stop offset="100%" stop-color="#EC4899"/>
+    </linearGradient>
+    <linearGradient id="textGradient" x1="0" y1="0" x2="100" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#9333EA"/>
+      <stop offset="100%" stop-color="#EC4899"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Icon Container -->
+  <rect x="4" y="4" width="40" height="40" rx="8" fill="url(#iconGradient)"/>
+
+  <!-- Film Icon -->
+  <g transform="translate(14, 14)">
+    <rect x="2" y="2" width="16" height="16" rx="2" ry="2" stroke="white" stroke-width="2" fill="none"/>
+    <line x1="2" y1="7" x2="18" y2="7" stroke="white" stroke-width="2"/>
+    <line x1="2" y1="13" x2="18" y2="13" stroke="white" stroke-width="2"/>
+  </g>
+
+  <!-- Text "nuitv" -->
+  <text x="52" y="34" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="url(#textGradient)">
+    nuitv
+  </text>
+</svg>
