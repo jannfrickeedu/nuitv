@@ -12,6 +12,9 @@
   --color-nui-light:  #D8B4FE;
   --color-nui-subtle: #E9D5FF;
   --color-nui-pink:   #EC4899;
+  --color-nui-green:  #22C55E;
+  --color-nui-red:    #EF4444;
+  --color-nui-yellow: #EAB308;
 }
 
 body { font-family: Helvetica, sans-serif; font-weight: bold; }

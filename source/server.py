@@ -1,5 +1,19 @@
-from bottle import Bottle, run, request, static_file, template
+import json
+import random
+from decimal import Decimal
+from bottle import Bottle, run, request, response, static_file, template
 from mysql.connector import connect
+
+class _Encoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            return float(obj)
+        return super().default(obj)
+
+
+def to_json(obj):
+    return json.dumps(obj, cls=_Encoder)
+
 
 app = Bottle()
 
@@ -90,6 +104,38 @@ def movie_detail(movie_id):
     except Exception as e:
         return template("detail", movie=None, cast=[], trailer=None, error=str(e))
     return template("detail", movie=movie, cast=cast, trailer=trailer, error=None)
+
+
+def get_random_movies(limit=10):
+    db = connect(
+        host="web3.kinet.ch",
+        user="omdb_user",
+        password="QhPSNctsBRgsYOKEbASI",
+        database="omdb",
+    )
+    cursor = db.cursor(dictionary=True)
+    cursor.execute(
+        "SELECT m.id, m.name, m.kind, YEAR(m.date) AS year, m.vote_average, a.text "
+        "FROM movies m LEFT JOIN abstracts a ON a.movie_id = m.id "
+        "WHERE m.kind IN ('movie', 'series') ORDER BY RAND() LIMIT %s",
+        (limit,),
+    )
+    results = cursor.fetchall()
+    cursor.close()
+    db.close()
+    return results
+
+
+@app.route("/swipe")
+def swipe():
+    movies = get_random_movies(10)
+    return template("swipe", initial_movies=to_json(movies))
+
+
+@app.route("/api/random")
+def random_movies():
+    response.content_type = "application/json"
+    return to_json(get_random_movies(10))
 
 
 @app.route("/static/<filepath:path>")
