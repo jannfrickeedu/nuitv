@@ -11,8 +11,18 @@
 <!-- initial_movies: JSON array of movie objects, rendered server-side to avoid a loading flash -->
 <body class="min-h-screen bg-nui-bg overflow-hidden flex flex-col">
 
-  <header class="flex items-center justify-between px-6 py-4 shrink-0">
-    <a href="/"><img src="/static/nuitv-logo.svg" alt="Logo" class="h-8"></a>
+  <header class="w-full flex items-center justify-between px-6 py-4 shadow bg-gradient-to-r from-nui-bg via-nui-dark to-nui-bg shrink-0">
+    <a href="/"><img src="/static/nuitv-logo.svg" alt="Logo" class="h-10 m-2"></a>
+    <form method="GET" action="/" class="relative flex-1 max-w-md mx-4">
+      <input
+        name="q"
+        type="text"
+        value=""
+        placeholder="Suchen..."
+        class="w-full rounded-full px-5 py-2 text-white bg-nui-card border border-nui-border outline-none focus:ring-2 focus:ring-nui-border placeholder:text-nui-light"
+        autocomplete="off"
+      >
+    </form>
   </header>
 
   <!-- Card stack; cards are absolutely positioned inside and injected by JS -->
