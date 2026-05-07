@@ -14,20 +14,27 @@
 
   <!-- Landing state: no search has been made yet (results is None and no error) -->
   %if results is None and not error:
-    <!-- Centered logo + search form -->
+    <!-- Centered logo + search form + action buttons -->
     <div class="flex flex-col items-center justify-center min-h-screen px-6 gap-6">
       <img src="/static/nuitv-logo.svg" alt="Logo" class="h-16">
-      <form method="GET" action="/" class="w-full max-w-md">
-        <input
-          name="q"
-          type="text"
-          value=""
-          placeholder="Suchen..."
-          autofocus
-          class="w-full rounded-full px-5 py-3 text-white bg-nui-card border border-nui-border outline-none focus:ring-2 focus:ring-nui-border placeholder:text-nui-light text-center"
-          autocomplete="off"
-        >
-      </form>
+      <div class="w-full max-w-md flex flex-col gap-3">
+        <form method="GET" action="/">
+          <input
+            name="q"
+            type="text"
+            value=""
+            placeholder="Suchen..."
+            autofocus
+            class="w-full rounded-full px-5 py-3 text-white bg-nui-card border border-nui-border outline-none focus:ring-2 focus:ring-nui-border placeholder:text-nui-light text-center"
+            autocomplete="off"
+          >
+        </form>
+        <!-- Buttons row below the search bar -->
+        <div class="flex justify-between">
+          <button class="px-5 py-2 rounded-full bg-nui-card border border-nui-border text-nui-muted text-sm">Placeholder</button>
+          <a href="/swipe" class="px-5 py-2 rounded-full bg-nui-dark border border-nui-border text-nui-subtle text-sm">Entdecken</a>
+        </div>
+      </div>
     </div>
 
   <!-- Results state: a search was made (results is a list, possibly empty, or there's an error) -->
