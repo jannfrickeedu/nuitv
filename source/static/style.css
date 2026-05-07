@@ -1,0 +1,17 @@
+@import "tailwindcss";
+@source "../views";
+
+@theme {
+  --font-sans: Helvetica, sans-serif;
+  --color-nui-bg:     #0F172A;
+  --color-nui-card:   #1E293B;
+  --color-nui-dark:   #581C87;
+  --color-nui-purple: #9333EA;
+  --color-nui-border: #A855F7;
+  --color-nui-muted:  #C084FC;
+  --color-nui-light:  #D8B4FE;
+  --color-nui-subtle: #E9D5FF;
+  --color-nui-pink:   #EC4899;
+}
+
+body { font-family: Helvetica, sans-serif; font-weight: bold; }
