@@ -2,7 +2,7 @@ import json
 import random
 from decimal import Decimal
 from bottle import Bottle, run, request, response, static_file, template
-from mysql.connector import connect
+from mysql.connector.pooling import MySQLConnectionPool
 
 class _Encoder(json.JSONEncoder):
     def default(self, obj):
@@ -23,13 +23,17 @@ USER = "omdb_user"
 PASSWORD = "QhPSNctsBRgsYOKEbASI"
 DATABASE = "omdb"
 
+pool = MySQLConnectionPool(
+    pool_name="nuitv",
+    pool_size=3,
+    host=HOST,
+    user=USER,
+    password=PASSWORD,
+    database=DATABASE,
+)
+
 def get_movie(movie_id):
-    db = connect(
-        host=HOST,
-        user=USER,
-        password=PASSWORD,
-        database=DATABASE,
-    )
+    db = pool.get_connection()
     cursor = db.cursor(dictionary=True)
 
     cursor.execute(
@@ -68,12 +72,7 @@ def get_movie(movie_id):
 
 
 def search_shows(query):
-    db = connect(
-        host=HOST,
-        user=USER,
-        password=PASSWORD,
-        database=DATABASE,
-    )
+    db = pool.get_connection()
     cursor = db.cursor(dictionary=True)
     cursor.execute(
         "SELECT m.id, m.name, m.kind, YEAR(m.date) AS year, m.vote_average, a.text "
@@ -112,26 +111,27 @@ def movie_detail(movie_id):
 
 
 def get_random_movies(limit=10):
-    db = connect(
-        host=HOST,
-        user=USER,
-        password=PASSWORD,
-        database=DATABASE,
-    )
+    db = pool.get_connection()
     cursor = db.cursor(dictionary=True)
     cursor.execute("SELECT COUNT(*) AS cnt FROM movies WHERE kind IN ('movie', 'series')")
     total = cursor.fetchone()["cnt"]
     offset = random.randint(0, max(0, total - limit))
     cursor.execute(
-        "SELECT m.id, m.name, m.kind, YEAR(m.date) AS year, m.vote_average, a.text "
-        "FROM movies m LEFT JOIN abstracts a ON a.movie_id = m.id "
-        "WHERE m.kind IN ('movie', 'series') LIMIT %s OFFSET %s",
+        "SELECT id, name, kind, YEAR(date) AS year, vote_average "
+        "FROM movies WHERE kind IN ('movie', 'series') LIMIT %s OFFSET %s",
         (limit, offset),
     )
-    results = cursor.fetchall()
+    movies = cursor.fetchall()
+    ids = [m["id"] for m in movies]
+    if ids:
+        fmt = ",".join(["%s"] * len(ids))
+        cursor.execute(f"SELECT movie_id, text FROM abstracts WHERE movie_id IN ({fmt})", ids)
+        texts = {row["movie_id"]: row["text"] for row in cursor.fetchall()}
+        for m in movies:
+            m["text"] = texts.get(m["id"])
     cursor.close()
     db.close()
-    return results
+    return movies
 
 
 @app.route("/swipe")
