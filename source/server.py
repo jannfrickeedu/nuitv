@@ -18,10 +18,10 @@ def to_json(obj):
 app = Bottle()
 
 
-HOST = "web3.kinet.ch",
-USER = "omdb_user",
-PASSWORD = "QhPSNctsBRgsYOKEbASI",
-DATABASE = "omdb",
+HOST = "web3.kinet.ch"
+USER = "omdb_user"
+PASSWORD = "QhPSNctsBRgsYOKEbASI"
+DATABASE = "omdb"
 
 def get_movie(movie_id):
     db = connect(
@@ -119,11 +119,14 @@ def get_random_movies(limit=10):
         database=DATABASE,
     )
     cursor = db.cursor(dictionary=True)
+    cursor.execute("SELECT COUNT(*) AS cnt FROM movies WHERE kind IN ('movie', 'series')")
+    total = cursor.fetchone()["cnt"]
+    offset = random.randint(0, max(0, total - limit))
     cursor.execute(
         "SELECT m.id, m.name, m.kind, YEAR(m.date) AS year, m.vote_average, a.text "
         "FROM movies m LEFT JOIN abstracts a ON a.movie_id = m.id "
-        "WHERE m.kind IN ('movie', 'series') ORDER BY RAND() LIMIT %s",
-        (limit,),
+        "WHERE m.kind IN ('movie', 'series') LIMIT %s OFFSET %s",
+        (limit, offset),
     )
     results = cursor.fetchall()
     cursor.close()
