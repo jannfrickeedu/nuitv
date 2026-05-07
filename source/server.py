@@ -18,12 +18,17 @@ def to_json(obj):
 app = Bottle()
 
 
+HOST = "web3.kinet.ch",
+USER = "omdb_user",
+PASSWORD = "QhPSNctsBRgsYOKEbASI",
+DATABASE = "omdb",
+
 def get_movie(movie_id):
     db = connect(
-        host="web3.kinet.ch",
-        user="omdb_user",
-        password="QhPSNctsBRgsYOKEbASI",
-        database="omdb",
+        host=HOST,
+        user=USER,
+        password=PASSWORD,
+        database=DATABASE,
     )
     cursor = db.cursor(dictionary=True)
 
@@ -64,10 +69,10 @@ def get_movie(movie_id):
 
 def search_shows(query):
     db = connect(
-        host="web3.kinet.ch",
-        user="omdb_user",
-        password="QhPSNctsBRgsYOKEbASI",
-        database="omdb",
+        host=HOST,
+        user=USER,
+        password=PASSWORD,
+        database=DATABASE,
     )
     cursor = db.cursor(dictionary=True)
     cursor.execute(
@@ -108,10 +113,10 @@ def movie_detail(movie_id):
 
 def get_random_movies(limit=10):
     db = connect(
-        host="web3.kinet.ch",
-        user="omdb_user",
-        password="QhPSNctsBRgsYOKEbASI",
-        database="omdb",
+        host=HOST,
+        user=USER,
+        password=PASSWORD,
+        database=DATABASE,
     )
     cursor = db.cursor(dictionary=True)
     cursor.execute(
