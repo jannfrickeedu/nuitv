@@ -113,22 +113,21 @@ def movie_detail(movie_id):
 def get_random_movies(limit=10):
     db = pool.get_connection()
     cursor = db.cursor(dictionary=True)
-    cursor.execute("SELECT COUNT(*) AS cnt FROM movies WHERE kind IN ('movie', 'series')")
+    cursor.execute(
+        "SELECT COUNT(*) AS cnt FROM movies m "
+        "INNER JOIN abstracts a ON a.movie_id = m.id "
+        "WHERE m.kind IN ('movie', 'series') AND a.text IS NOT NULL"
+    )
     total = cursor.fetchone()["cnt"]
     offset = random.randint(0, max(0, total - limit))
     cursor.execute(
-        "SELECT id, name, kind, YEAR(date) AS year, vote_average "
-        "FROM movies WHERE kind IN ('movie', 'series') LIMIT %s OFFSET %s",
+        "SELECT m.id, m.name, m.kind, YEAR(m.date) AS year, m.vote_average, a.text "
+        "FROM movies m INNER JOIN abstracts a ON a.movie_id = m.id "
+        "WHERE m.kind IN ('movie', 'series') AND a.text IS NOT NULL "
+        "LIMIT %s OFFSET %s",
         (limit, offset),
     )
     movies = cursor.fetchall()
-    ids = [m["id"] for m in movies]
-    if ids:
-        fmt = ",".join(["%s"] * len(ids))
-        cursor.execute(f"SELECT movie_id, text FROM abstracts WHERE movie_id IN ({fmt})", ids)
-        texts = {row["movie_id"]: row["text"] for row in cursor.fetchall()}
-        for m in movies:
-            m["text"] = texts.get(m["id"])
     cursor.close()
     db.close()
     return movies
