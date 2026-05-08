@@ -57,6 +57,7 @@
       const stars = movie.vote_average ? `<span class="text-xs text-nui-yellow">★ ${movie.vote_average}</span>` : '';
       const desc  = movie.text ? `<p class="text-sm text-nui-muted leading-relaxed" style="-webkit-line-clamp:6;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden">${movie.text}</p>` : '';
       const year  = movie.year  ? `<p class="text-sm text-nui-muted mt-1">${movie.year}</p>` : '';
+      const abstractText = movie.text || 'Keine Beschreibung verfügbar.';
 
       return `
         <div class="absolute inset-0 flex flex-col">
@@ -68,6 +69,12 @@
           <div class="px-4 pb-4 pt-8" style="background:linear-gradient(to top,var(--color-nui-bg) 60%,transparent)">
             <h2 class="text-xl font-semibold text-white leading-tight">${movie.name}</h2>
             ${year}
+          </div>
+        </div>
+        <div class="abstract-ol absolute inset-0 rounded-2xl flex flex-col justify-end opacity-0 pointer-events-none" style="background:rgba(18,18,28,0.96);transition:opacity 0.2s ease">
+          <div class="p-6 overflow-hidden" style="max-height:100%">
+            <h2 class="text-lg font-semibold text-white mb-3 leading-tight">${movie.name}</h2>
+            <p class="text-sm text-nui-light leading-relaxed" style="-webkit-line-clamp:12;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden">${abstractText}</p>
           </div>
         </div>
         <div class="like-ol    absolute inset-0 rounded-2xl border-4 border-nui-green opacity-0 pointer-events-none flex items-start justify-end p-4">
@@ -171,7 +178,19 @@
       topCard.removeEventListener('pointerup',   onUp);
       topCard.removeEventListener('pointercancel', onUp);
 
-      Math.abs(deltaX) >= THRESHOLD ? commitSwipe(deltaX > 0 ? 1 : -1) : snapBack();
+      if (Math.abs(deltaX) < 8) {
+        toggleAbstract(topCard);
+      } else if (Math.abs(deltaX) >= THRESHOLD) {
+        commitSwipe(deltaX > 0 ? 1 : -1);
+      } else {
+        snapBack();
+      }
+    }
+
+    function toggleAbstract(card) {
+      const ol = card.querySelector('.abstract-ol');
+      const open = ol.style.opacity === '1';
+      ol.style.opacity = open ? '0' : '1';
     }
 
     function commitSwipe(dir) {
