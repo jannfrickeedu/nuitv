@@ -71,11 +71,8 @@
             ${year}
           </div>
         </div>
-        <div class="abstract-ol absolute inset-0 rounded-2xl flex flex-col justify-end opacity-0 pointer-events-none" style="background:rgba(18,18,28,0.96);transition:opacity 0.2s ease">
-          <div class="p-6 overflow-hidden" style="max-height:100%">
-            <h2 class="text-lg font-semibold text-white mb-3 leading-tight">${movie.name}</h2>
-            <p class="text-sm text-nui-light leading-relaxed" style="-webkit-line-clamp:12;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden">${abstractText}</p>
-          </div>
+        <div class="abstract-ol absolute inset-0 rounded-2xl opacity-0 pointer-events-none p-6 overflow-hidden" style="background:rgba(18,18,28,0.96);transition:opacity 0.2s ease">
+          <p class="text-sm text-nui-light leading-relaxed" style="-webkit-line-clamp:14;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden">${movie.text}</p>
         </div>
         <div class="like-ol    absolute inset-0 rounded-2xl border-4 border-nui-green opacity-0 pointer-events-none flex items-start justify-end p-4">
           <span class="font-semibold text-nui-green text-lg tracking-widest" style="transform:rotate(-15deg)">LIKE</span>
