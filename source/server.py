@@ -8,14 +8,25 @@ from dotenv import load_dotenv
 
 
 class _Encoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, Decimal):
-            return float(obj)
-        return super().default(obj)
+    def default(self, o):
+        if isinstance(o, Decimal):
+            return float(o)
+        return super().default(o)
 
 
 def to_json(obj):
     return json.dumps(obj, cls=_Encoder)
+
+
+def to_script_json(obj):
+    return (
+        json.dumps(obj, cls=_Encoder)
+        .replace("<", "\\u003c")
+        .replace(">", "\\u003e")
+        .replace("&", "\\u0026")
+        .replace("\u2028", "\\u2028")
+        .replace("\u2029", "\\u2029")
+    )
 
 
 app = Bottle()
@@ -29,27 +40,12 @@ DATABASE = os.getenv("NUITV_DB_NAME", "omdb")
 pool = None
 pool_error = None
 
-pool = MySQLConnectionPool(
-    pool_name="nuitv",
-    pool_size=3,
-    host=HOST,
-    user=USER,
-    password=PASSWORD,
-    database=DATABASE,
-)
 
-def get_movie(movie_id):
-    db = pool.get_connection()
-    cursor = db.cursor(dictionary=True)
+def init_pool():
+    global pool, pool_error
 
-    cursor.execute(
-        "SELECT m.id, m.name, m.kind, m.date, YEAR(m.date) AS year, "
-        "m.vote_average, m.runtime, a.text "
-        "FROM movies m LEFT JOIN abstracts a ON a.movie_id = m.id "
-        "WHERE m.id = %s",
-        (movie_id,),
-    )
-    movie = cursor.fetchone()
+    if pool is not None:
+        return pool
 
     if not PASSWORD:
         pool_error = "NUITV_DB_PASSWORD is not set"
@@ -64,34 +60,79 @@ def get_movie(movie_id):
             password=PASSWORD,
             database=DATABASE,
         )
-        cast = cursor.fetchall()
+        pool_error = None
+        return pool
+    except Exception as e:
+        pool_error = f"Database pool initialization failed: {e}"
+        return None
 
+
+def get_db_connection():
+    active_pool = init_pool()
+    if active_pool is None:
+        raise RuntimeError(pool_error or "Database is not configured")
+
+    try:
+        return active_pool.get_connection()
+    except Exception as e:
+        raise RuntimeError(f"Database connection unavailable: {e}") from e
+
+
+def get_movie(movie_id):
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+
+    try:
         cursor.execute(
-            "SELECT `key` FROM trailers WHERE movie_id = %s AND source = 'youtube' LIMIT 1",
+            "SELECT m.id, m.name, m.kind, m.date, YEAR(m.date) AS year, "
+            "m.vote_average, m.runtime, a.text "
+            "FROM movies m LEFT JOIN abstracts a ON a.movie_id = m.id "
+            "WHERE m.id = %s",
             (movie_id,),
         )
-        row = cursor.fetchone()
-        if row:
-            trailer = row["key"]
+        movie = cursor.fetchone()
 
-    cursor.close()
-    db.close()
-    return movie, cast, trailer
+        cast = []
+        trailer = None
+        if movie:
+            cursor.execute(
+                "SELECT DISTINCT p.name, c.role FROM casts c "
+                "JOIN people p ON p.id = c.person_id "
+                "JOIN job_names jn ON jn.job_id = c.job_id "
+                "WHERE c.movie_id = %s AND jn.name = 'Actor' AND jn.language = 'en' "
+                "ORDER BY c.position LIMIT 15",
+                (movie_id,),
+            )
+            cast = cursor.fetchall()
+
+            cursor.execute(
+                "SELECT `key` FROM trailers WHERE movie_id = %s AND source = 'youtube' LIMIT 1",
+                (movie_id,),
+            )
+            row = cursor.fetchone()
+            if row:
+                trailer = row["key"]
+
+        return movie, cast, trailer
+    finally:
+        cursor.close()
+        db.close()
 
 
 def search_shows(query):
     db = get_db_connection()
     cursor = db.cursor(dictionary=True)
-    cursor.execute(
-        "SELECT m.id, m.name, m.kind, YEAR(m.date) AS year, m.vote_average, a.text "
-        "FROM movies m LEFT JOIN abstracts a ON a.movie_id = m.id "
-        "WHERE m.name LIKE %s AND m.kind IN ('movie', 'series') LIMIT 20",
-        (f"%{query}%",),
-    )
-    results = cursor.fetchall()
-    cursor.close()
-    db.close()
-    return results
+    try:
+        cursor.execute(
+            "SELECT m.id, m.name, m.kind, YEAR(m.date) AS year, m.vote_average, a.text "
+            "FROM movies m LEFT JOIN abstracts a ON a.movie_id = m.id "
+            "WHERE m.name LIKE %s AND m.kind IN ('movie', 'series') LIMIT 20",
+            (f"%{query}%",),
+        )
+        return cursor.fetchall()
+    finally:
+        cursor.close()
+        db.close()
 
 
 @app.route("/")
@@ -119,38 +160,45 @@ def movie_detail(movie_id):
 
 
 def get_random_movies(limit=10):
-    db = pool.get_connection()
+    db = get_db_connection()
     cursor = db.cursor(dictionary=True)
-    cursor.execute(
-        "SELECT COUNT(*) AS cnt FROM movies m "
-        "INNER JOIN abstracts a ON a.movie_id = m.id "
-        "WHERE m.kind IN ('movie', 'series') AND a.text IS NOT NULL"
-    )
-    total = cursor.fetchone()["cnt"]
-    offset = random.randint(0, max(0, total - limit))
-    cursor.execute(
-        "SELECT m.id, m.name, m.kind, YEAR(m.date) AS year, m.vote_average, a.text "
-        "FROM movies m INNER JOIN abstracts a ON a.movie_id = m.id "
-        "WHERE m.kind IN ('movie', 'series') AND a.text IS NOT NULL "
-        "LIMIT %s OFFSET %s",
-        (limit, offset),
-    )
-    movies = cursor.fetchall()
-    cursor.close()
-    db.close()
-    return movies
+    try:
+        cursor.execute(
+            "SELECT COUNT(*) AS cnt FROM movies m "
+            "INNER JOIN abstracts a ON a.movie_id = m.id "
+            "WHERE m.kind IN ('movie', 'series') AND a.text IS NOT NULL"
+        )
+        total = cursor.fetchone()["cnt"]
+        offset = random.randint(0, max(0, total - limit))
+        cursor.execute(
+            "SELECT m.id, m.name, m.kind, YEAR(m.date) AS year, m.vote_average, a.text "
+            "FROM movies m INNER JOIN abstracts a ON a.movie_id = m.id "
+            "WHERE m.kind IN ('movie', 'series') AND a.text IS NOT NULL "
+            "LIMIT %s OFFSET %s",
+            (limit, offset),
+        )
+        return cursor.fetchall()
+    finally:
+        cursor.close()
+        db.close()
 
 
 @app.route("/swipe")
 def swipe():
-    movies = get_random_movies(10)
-    return template("swipe", initial_movies=to_json(movies))
+    try:
+        movies = get_random_movies(10)
+    except Exception:
+        movies = []
+    return template("swipe", initial_movies_json=to_script_json(movies))
 
 
 @app.route("/api/random")
 def random_movies():
     response.content_type = "application/json"
-    return to_json(get_random_movies(10))
+    try:
+        return to_json(get_random_movies(10))
+    except Exception:
+        return to_json([])
 
 
 @app.route("/static/<filepath:path>")

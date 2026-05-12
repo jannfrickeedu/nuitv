@@ -42,11 +42,13 @@
     </div>
   </div>
 
+  <script id="initial-movies" type="application/json">{{!initial_movies_json}}</script>
   <script>
     const THRESHOLD = 90;   // px to commit a swipe
     const STACK_SIZE = 3;   // how many cards to keep in DOM
 
-    let queue = {{!initial_movies}};
+    const initialMoviesNode = document.getElementById('initial-movies');
+    let queue = JSON.parse(initialMoviesNode?.textContent || '[]');
     let topCard = null;
     let startX = 0, deltaX = 0, dragging = false;
 
@@ -105,12 +107,18 @@
 
     function renderStack() {
       const stack = document.getElementById('stack');
+      const empty = document.getElementById('empty');
+      const actions = document.getElementById('actions');
       stack.innerHTML = '';
 
+      empty.classList.add('hidden');
+      empty.classList.remove('flex');
+      actions.classList.remove('hidden');
+
       if (queue.length === 0) {
-        document.getElementById('empty').classList.remove('hidden');
-        document.getElementById('empty').classList.add('flex');
-        document.getElementById('actions').classList.add('hidden');
+        empty.classList.remove('hidden');
+        empty.classList.add('flex');
+        actions.classList.add('hidden');
         return;
       }
 
@@ -208,13 +216,23 @@
 
     document.getElementById('btn-dislike').addEventListener('click', () => { if (topCard) commitSwipe(-1); });
     document.getElementById('btn-like').addEventListener('click',    () => { if (topCard) commitSwipe(1);  });
-    document.getElementById('btn-reload').addEventListener('click',  () => loadMore().then(renderStack));
+    document.getElementById('btn-reload').addEventListener('click', async () => {
+      const loaded = await loadMore();
+      if (loaded) renderStack();
+    });
 
     // --- data loading ---
 
     async function loadMore() {
-      const data = await fetch('/api/random').then(r => r.json());
-      queue.push(...data);
+      try {
+        const response = await fetch('/api/random');
+        if (!response.ok) return false;
+        const data = await response.json();
+        queue.push(...data);
+        return true;
+      } catch {
+        return false;
+      }
     }
 
     renderStack();
