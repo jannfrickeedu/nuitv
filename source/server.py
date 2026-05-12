@@ -1,8 +1,11 @@
 import json
+import os
 import random
 from decimal import Decimal
 from bottle import Bottle, run, request, response, static_file, template
 from mysql.connector.pooling import MySQLConnectionPool
+from dotenv import load_dotenv
+
 
 class _Encoder(json.JSONEncoder):
     def default(self, obj):
@@ -17,11 +20,14 @@ def to_json(obj):
 
 app = Bottle()
 
+load_dotenv()
+HOST = os.getenv("NUITV_DB_HOST", "web3.kinet.ch")
+USER = os.getenv("NUITV_DB_USER", "omdb_user")
+PASSWORD = os.getenv("NUITV_DB_PASSWORD")
+DATABASE = os.getenv("NUITV_DB_NAME", "omdb")
 
-HOST = "web3.kinet.ch"
-USER = "omdb_user"
-PASSWORD = "QhPSNctsBRgsYOKEbASI"
-DATABASE = "omdb"
+pool = None
+pool_error = None
 
 pool = MySQLConnectionPool(
     pool_name="nuitv",
@@ -45,16 +51,18 @@ def get_movie(movie_id):
     )
     movie = cursor.fetchone()
 
-    cast = []
-    trailer = None
-    if movie:
-        cursor.execute(
-            "SELECT DISTINCT p.name, c.role FROM casts c "
-            "JOIN people p ON p.id = c.person_id "
-            "JOIN job_names jn ON jn.job_id = c.job_id "
-            "WHERE c.movie_id = %s AND jn.name = 'Actor' AND jn.language = 'en' "
-            "ORDER BY c.position LIMIT 15",
-            (movie_id,),
+    if not PASSWORD:
+        pool_error = "NUITV_DB_PASSWORD is not set"
+        return None
+
+    try:
+        pool = MySQLConnectionPool(
+            pool_name="nuitv",
+            pool_size=3,
+            host=HOST,
+            user=USER,
+            password=PASSWORD,
+            database=DATABASE,
         )
         cast = cursor.fetchall()
 
@@ -72,7 +80,7 @@ def get_movie(movie_id):
 
 
 def search_shows(query):
-    db = pool.get_connection()
+    db = get_db_connection()
     cursor = db.cursor(dictionary=True)
     cursor.execute(
         "SELECT m.id, m.name, m.kind, YEAR(m.date) AS year, m.vote_average, a.text "
