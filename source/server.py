@@ -1,6 +1,7 @@
 import json
 import os
 import random
+from datetime import date, datetime
 from decimal import Decimal
 from bottle import Bottle, run, request, response, static_file, template
 from mysql.connector.pooling import MySQLConnectionPool
@@ -11,6 +12,8 @@ class _Encoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, Decimal):
             return float(o)
+        if isinstance(o, (date, datetime)):
+            return o.isoformat()
         return super().default(o)
 
 
@@ -155,8 +158,23 @@ def movie_detail(movie_id):
     try:
         movie, cast, trailer = get_movie(movie_id)
     except Exception as e:
-        return template("detail", movie=None, cast=[], trailer=None, error=str(e))
-    return template("detail", movie=movie, cast=cast, trailer=trailer, error=None)
+        return template(
+            "detail",
+            movie=None,
+            cast=[],
+            trailer=None,
+            error=str(e),
+            movie_json="null",
+        )
+
+    return template(
+        "detail",
+        movie=movie,
+        cast=cast,
+        trailer=trailer,
+        error=None,
+        movie_json=to_script_json(movie) if movie else "null",
+    )
 
 
 def get_random_movies(limit=10):
@@ -165,19 +183,53 @@ def get_random_movies(limit=10):
     try:
         cursor.execute(
             "SELECT COUNT(*) AS cnt FROM movies m "
-            "INNER JOIN abstracts a ON a.movie_id = m.id "
+            "LEFT JOIN abstracts a ON a.movie_id = m.id "
             "WHERE m.kind IN ('movie', 'series') AND a.text IS NOT NULL"
         )
         total = cursor.fetchone()["cnt"]
         offset = random.randint(0, max(0, total - limit))
         cursor.execute(
             "SELECT m.id, m.name, m.kind, YEAR(m.date) AS year, m.vote_average, a.text "
-            "FROM movies m INNER JOIN abstracts a ON a.movie_id = m.id "
+            "FROM movies m LEFT JOIN abstracts a ON a.movie_id = m.id "
             "WHERE m.kind IN ('movie', 'series') AND a.text IS NOT NULL "
             "LIMIT %s OFFSET %s",
             (limit, offset),
         )
         return cursor.fetchall()
+    finally:
+        cursor.close()
+        db.close()
+
+
+def get_movies_by_ids(ids):
+    if not ids:
+        return []
+
+    normalized_ids = []
+    for raw_id in ids:
+        try:
+            movie_id = int(raw_id)
+        except (TypeError, ValueError):
+            continue
+        if movie_id not in normalized_ids:
+            normalized_ids.append(movie_id)
+
+    if not normalized_ids:
+        return []
+
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+    try:
+        placeholders = ", ".join(["%s"] * len(normalized_ids))
+        cursor.execute(
+            "SELECT m.id, m.name, m.kind, YEAR(m.date) AS year, m.vote_average, a.text "
+            "FROM movies m LEFT JOIN abstracts a ON a.movie_id = m.id "
+            f"WHERE m.id IN ({placeholders})",
+            tuple(normalized_ids),
+        )
+        rows = cursor.fetchall()
+        by_id = {row["id"]: row for row in rows}
+        return [by_id[movie_id] for movie_id in normalized_ids if movie_id in by_id]
     finally:
         cursor.close()
         db.close()
@@ -192,11 +244,28 @@ def swipe():
     return template("swipe", initial_movies_json=to_script_json(movies))
 
 
+@app.route("/likes")
+def likes_page():
+    return template("likes")
+
+
 @app.route("/api/random")
 def random_movies():
     response.content_type = "application/json"
     try:
         return to_json(get_random_movies(10))
+    except Exception:
+        return to_json([])
+
+
+@app.post("/api/movies/by-ids")
+def movies_by_ids():
+    response.content_type = "application/json"
+    payload = request.json or {}
+    ids = payload.get("ids", []) if isinstance(payload, dict) else []
+
+    try:
+        return to_json(get_movies_by_ids(ids))
     except Exception:
         return to_json([])
 
