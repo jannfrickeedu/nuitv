@@ -73,29 +73,6 @@
   %end
 </div>
 
+<script id="movie-data" type="application/json">{{!movie_json}}</script>
 <script src="/static/likes.js"></script>
-<script>
-  const MOVIE = {{!movie_json}};
-
-  function syncLikeButton() {
-    const btn = document.getElementById('like-toggle');
-    if (!btn || !MOVIE || !MOVIE.id) return;
-
-    const liked = window.NuiLikes.isLiked(MOVIE.id);
-    btn.dataset.liked = liked ? 'true' : 'false';
-    btn.textContent = liked ? '♥ Gemerkt' : '♡ Merken';
-    btn.classList.toggle('border-nui-green', liked);
-    btn.classList.toggle('text-nui-green', liked);
-  }
-
-  const likeBtn = document.getElementById('like-toggle');
-  if (likeBtn && MOVIE && MOVIE.id) {
-    syncLikeButton();
-    likeBtn.addEventListener('click', () => {
-      const liked = likeBtn.dataset.liked === 'true';
-      if (liked) window.NuiLikes.remove(MOVIE.id);
-      else window.NuiLikes.setLiked(MOVIE, { source: 'detail' });
-      syncLikeButton();
-    });
-  }
-</script>
+<script src="/static/detail-page.js"></script>
