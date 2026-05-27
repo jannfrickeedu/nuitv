@@ -6,6 +6,10 @@ First install dependencies with your prefered python package installer, we recom
 ``` bsh
 pip3 install -r requirements.txt
 ```
+Move into the source directory
+```bsh
+cd source
+```
 Now you need to write the database credentials into the .env file.
 ``` .env
 NUITV_DB_HOST=web3.kinet.ch
@@ -13,8 +17,12 @@ NUITV_DB_USER=xxx
 NUITV_DB_PASSWORD=xxx
 NUITV_DB_NAME=omdb
 ```
-
 Running the app for development is done with honcho:
 ```bsh
 honcho start
+```
+An alternative to honcho would be to use npx concurrently
+```bsh
+npm i -D concurrently
+npx concurrently "python3 server.py" "npx bite build --watch"
 ```
