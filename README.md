@@ -6,6 +6,10 @@ First install dependencies with your prefered python package installer, we recom
 ``` bsh
 pip3 install -r requirements.txt
 ```
+Also install required npm packages
+```bsh
+npm i vite@8.0.14 tailwindcss@4.3 
+```
 Move into the source directory
 ```bsh
 cd source
