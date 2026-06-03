@@ -38,25 +38,32 @@
     const kind = movie.kind === 'movie' ? 'Film' : 'Serie';
     const stars = movie.vote_average ? `<span class="text-xs text-nui-yellow">★ ${escapeHtml(movie.vote_average)}</span>` : '';
     const desc = movie.text
-      ? `<p class="text-sm text-nui-muted leading-relaxed" style="-webkit-line-clamp:6;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden">${escapeHtml(movie.text)}</p>`
+      ? `
+      <p class="text-sm text-nui-muted leading-relaxed" 
+        style="display:-webkit-box;-webkit-box-orient:vertical;">
+          ${escapeHtml(movie.text)}
+      </p>`
       : '';
     const year = movie.year ? `<p class="text-sm text-nui-muted mt-1">${escapeHtml(movie.year)}</p>` : '';
 
     return `
       <div class="absolute inset-0 flex flex-col">
         <div class="flex items-center justify-between p-4 shrink-0">
-          <span class="text-xs px-2 py-1 rounded-full bg-nui-dark text-nui-subtle">${kind}</span>
+          <span class="text-xs px-2 py-1 rounded-full bg-nui-dark text-nui-subtle">
+            ${kind}
+          </span>
           ${stars}
         </div>
-        <div class="flex-1 px-4 overflow-hidden">${desc}</div>
-        <div class="px-4 pb-4 pt-8" style="background:linear-gradient(to top,var(--color-nui-bg) 60%,transparent)">
-          <h2 class="text-xl font-semibold text-white leading-tight">${escapeHtml(movie.name)}</h2>
+        <div class="flex-1 px-4">${desc}</div>
+        <div class="px-4 pb-4 pt-8" 
+        style="background:linear-gradient(to top,var(--color-nui-bg) 60%,transparent)">
+          <h2 class="text-xl font-semibold text-white leading-tight">
+            ${escapeHtml(movie.name)}
+          </h2>
           ${year}
         </div>
       </div>
-      <div class="abstract-ol absolute inset-0 rounded-2xl opacity-0 pointer-events-none p-6 overflow-hidden" style="background:rgba(18,18,28,0.96);transition:opacity 0.2s ease">
-        <p class="text-sm text-nui-light leading-relaxed" style="-webkit-line-clamp:14;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden">${escapeHtml(movie.text || '')}</p>
-      </div>
+
       <div
       class="like-ol absolute inset-0 rounded-2xl border-4
       border-nui-green opacity-0 pointer-events-none flex items-center justify-center p-4">
@@ -167,19 +174,11 @@
     topCard.removeEventListener('pointerup', onUp);
     topCard.removeEventListener('pointercancel', onUp);
 
-    if (Math.abs(deltaX) < 8) {
-      toggleAbstract(topCard);
-    } else if (Math.abs(deltaX) >= THRESHOLD) {
+    if (Math.abs(deltaX) >= THRESHOLD) {
       commitSwipe(deltaX > 0 ? 1 : -1);
     } else {
       snapBack();
     }
-  }
-
-  function toggleAbstract(card) {
-    const ol = card.querySelector('.abstract-ol');
-    const open = ol.style.opacity === '1';
-    ol.style.opacity = open ? '0' : '1';
   }
 
   function commitSwipe(dir) {
