@@ -57,11 +57,20 @@
       <div class="abstract-ol absolute inset-0 rounded-2xl opacity-0 pointer-events-none p-6 overflow-hidden" style="background:rgba(18,18,28,0.96);transition:opacity 0.2s ease">
         <p class="text-sm text-nui-light leading-relaxed" style="-webkit-line-clamp:14;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden">${escapeHtml(movie.text || '')}</p>
       </div>
-      <div class="like-ol absolute inset-0 rounded-2xl border-4 border-nui-green opacity-0 pointer-events-none flex items-start justify-end p-4">
-        <span class="font-semibold text-nui-green text-lg tracking-widest" style="transform:rotate(-15deg)">LIKE</span>
+      <div
+      class="like-ol absolute inset-0 rounded-2xl border-4
+      border-nui-green opacity-0 pointer-events-none flex items-center justify-center p-4">
+        <span 
+          class="font-semibold text-nui-green text-lg tracking-widest">
+          LIKE
+        </span>
       </div>
-      <div class="dislike-ol absolute inset-0 rounded-2xl border-4 border-nui-red opacity-0 pointer-events-none flex items-start justify-start p-4">
-        <span class="font-semibold text-nui-red text-lg tracking-widest" style="transform:rotate(15deg)">NOPE</span>
+      <div class="dislike-ol absolute inset-0 rounded-2xl border-4
+      border-nui-red opacity-0 pointer-events-none flex items-center justify-center p-4">
+        <span 
+          class="font-semibold text-nui-red text-lg tracking-widest">
+          NOPE
+        </span>
       </div>
     `;
   }
