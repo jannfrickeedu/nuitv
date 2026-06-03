@@ -90,7 +90,7 @@ def get_movie(movie_id):
             "SELECT m.id, m.name, m.kind, m.date, YEAR(m.date) AS year, "
             "m.vote_average, m.runtime, a.text "
             "FROM movies m LEFT JOIN abstracts a ON a.movie_id = m.id "
-            "WHERE m.id = %s AND vote_average IS NOT NULL ",
+            "WHERE m.id = %s AND m.vote_average IS NOT NULL ",
             (movie_id,),
         )
         movie = cursor.fetchone()
@@ -102,7 +102,7 @@ def get_movie(movie_id):
                 "SELECT DISTINCT p.name, c.role FROM casts c "
                 "JOIN people p ON p.id = c.person_id "
                 "JOIN job_names jn ON jn.job_id = c.job_id "
-                "WHERE c.movie_id = %s AND jn.name = 'Actor' AND jn.language = 'en' AND vote_average IS NOT NULL "
+                "WHERE c.movie_id = %s AND jn.name = 'Actor' AND jn.language = 'en' "
                 "ORDER BY c.position LIMIT 15",
                 (movie_id,),
             )
@@ -129,7 +129,7 @@ def search_shows(query):
         cursor.execute(
             "SELECT m.id, m.name, m.kind, YEAR(m.date) AS year, m.vote_average, a.text "
             "FROM movies m LEFT JOIN abstracts a ON a.movie_id = m.id "
-            "WHERE m.name LIKE %s AND m.kind IN ('movie', 'series') AND vote_average IS NOT NULL LIMIT 20",
+            "WHERE m.name LIKE %s AND m.kind IN ('movie', 'series') AND m.vote_average IS NOT NULL LIMIT 20",
             (f"%{query}%",),
         )
         return cursor.fetchall()
@@ -184,14 +184,14 @@ def get_random_movies(limit=10):
         cursor.execute(
             "SELECT COUNT(*) AS cnt FROM movies m "
             "LEFT JOIN abstracts a ON a.movie_id = m.id "
-            "WHERE m.kind IN ('movie', 'series') AND a.text IS NOT NULL AND vote_average IS NOT NULL"
+            "WHERE m.kind IN ('movie', 'series') AND a.text IS NOT NULL AND m.vote_average IS NOT NULL"
         )
         total = cursor.fetchone()["cnt"]
         offset = random.randint(0, max(0, total - limit))
         cursor.execute(
             "SELECT m.id, m.name, m.kind, YEAR(m.date) AS year, m.vote_average, a.text "
             "FROM movies m LEFT JOIN abstracts a ON a.movie_id = m.id "
-            "WHERE m.kind IN ('movie', 'series') AND a.text IS NOT NULL AND vote_average IS NOT NULL "
+            "WHERE m.kind IN ('movie', 'series') AND a.text IS NOT NULL AND m.vote_average IS NOT NULL "
             "LIMIT %s OFFSET %s",
             (limit, offset),
         )
@@ -224,7 +224,7 @@ def get_movies_by_ids(ids):
         cursor.execute(
             "SELECT m.id, m.name, m.kind, YEAR(m.date) AS year, m.vote_average, a.text "
             "FROM movies m LEFT JOIN abstracts a ON a.movie_id = m.id "
-            f"WHERE m.id IN ({placeholders}) AND vote_average IS NOT NULL",
+            f"WHERE m.id IN ({placeholders}) AND m.vote_average IS NOT NULL",
             tuple(normalized_ids),
         )
         rows = cursor.fetchall()
